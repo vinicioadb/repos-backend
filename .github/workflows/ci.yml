@@ -1,0 +1,74 @@
+name: Backend CI
+
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Tests, coverage, Sonar and Docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run tests with LCOV coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: coverage/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Check Sonar configuration
+        id: sonar-config
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+        run: |
+          if [[ -n "$SONAR_TOKEN" && -n "$SONAR_PROJECT_KEY" && -n "$SONAR_ORGANIZATION" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Analyze with SonarQube Cloud
+        if: ${{ steps.sonar-config.outputs.enabled == 'true' }}
+        uses: SonarSource/sonarqube-scan-action@v8.3.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+        with:
+          args: >
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+            -Dsonar.qualitygate.wait=true
+
+      - name: Explain skipped Sonar analysis
+        if: ${{ steps.sonar-config.outputs.enabled != 'true' }}
+        run: echo "Sonar analysis skipped until SONAR_TOKEN and repository variables are configured."
+
+      - name: Build Docker image
+        run: docker build --tag repos-api:${{ github.sha }} .
