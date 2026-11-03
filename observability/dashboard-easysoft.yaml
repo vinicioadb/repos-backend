@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: easysoft-api-dashboard
+  labels:
+    grafana_dashboard: "1"
+data:
+  easysoft-api.json: |-
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "panels": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"unit": "reqps"}},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "id": 1,
+          "targets": [{"expr": "sum(rate(easysoft_http_requests_total[5m]))", "legendFormat": "solicitudes/s", "refId": "A"}],
+          "title": "Tráfico de la API",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"unit": "s"}},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "id": 2,
+          "targets": [{"expr": "sum(rate(easysoft_http_request_duration_seconds_sum[5m])) / sum(rate(easysoft_http_request_duration_seconds_count[5m]))", "legendFormat": "latencia media", "refId": "A"}],
+          "title": "Latencia media",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"unit": "short"}},
+          "gridPos": {"h": 6, "w": 8, "x": 0, "y": 8},
+          "id": 3,
+          "targets": [{"expr": "easysoft_repositories_total", "refId": "A"}],
+          "title": "Repositorios publicados",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"unit": "bytes"}},
+          "gridPos": {"h": 6, "w": 8, "x": 8, "y": 8},
+          "id": 4,
+          "targets": [{"expr": "easysoft_process_heap_used_bytes", "refId": "A"}],
+          "title": "Memoria heap del backend",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"unit": "s"}},
+          "gridPos": {"h": 6, "w": 8, "x": 16, "y": 8},
+          "id": 5,
+          "targets": [{"expr": "easysoft_process_uptime_seconds", "refId": "A"}],
+          "title": "Tiempo activo del backend",
+          "type": "stat"
+        }
+      ],
+      "refresh": "15s",
+      "schemaVersion": 39,
+      "tags": ["easysoft", "devops"],
+      "templating": {"list": []},
+      "time": {"from": "now-30m", "to": "now"},
+      "title": "Easysoft API Observability",
+      "uid": "easysoft-api"
+    }

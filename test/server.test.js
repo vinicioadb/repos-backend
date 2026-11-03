@@ -58,6 +58,19 @@ describe('API de repositorios', () => {
     assert.match(response.headers.get('content-type'), /application\/json/);
   });
 
+  it('expone métricas compatibles con Prometheus', async () => {
+    const response = await fetch(`${baseUrl}/metrics`);
+    const body = await response.text();
+
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get('content-type'), /text\/plain/);
+    assert.match(body, /# TYPE easysoft_http_requests_total counter/);
+    assert.match(body, /easysoft_http_requests_total\{method="GET",route="\/health",status="200"\}/);
+    assert.match(body, /# TYPE easysoft_http_request_duration_seconds summary/);
+    assert.match(body, /easysoft_repositories_total 1/);
+    assert.match(body, /easysoft_process_heap_used_bytes \d+/);
+  });
+
   it('responde 404 para un endpoint de API desconocido', async () => {
     const response = await fetch(`${baseUrl}/api/no-existe`);
 
