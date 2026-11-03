@@ -11,7 +11,7 @@ permissions:
 jobs:
   quality:
     name: Tests, coverage, Sonar and Docker
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
 
     steps:
@@ -32,7 +32,7 @@ jobs:
         run: npm run test:coverage
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: backend-coverage
           path: coverage/
